@@ -1,0 +1,131 @@
+﻿══════════════════════════════════╗
+║                     NEXT STEPS - ACTION PLAN                     
+
+
+ GOAL: Generate AWS Security Group Audit Report
+
+ PREREQUISITES (Already Complete!)
+    Python 3.11.9 installed
+    All dependencies installed
+    Project structure created
+    Code validated and ready
+
+
+
+STEP 1: COLLECT DATA IN AWS CONSOLE
+
+
+1. Open your web browser
+2. Navigate to: https://console.aws.amazon.com
+3. Sign in to your AWS account
+4. Click the CloudShell icon (>_) in the top navigation bar
+   (Usually next to the bell icon on the right side)
+5. Wait for CloudShell to initialize
+
+6. Upload the data collection script:
+    Click "Actions"  "Upload file"
+    Select: scripts/collect_sg_data.sh
+    Wait for upload to complete
+
+7. Make the script executable:
+   chmod +x collect_sg_data.sh
+
+8. Run the script:
+   bash collect_sg_data.sh
+
+9. Wait for completion (may take 5-15 minutes depending on regions)
+    You'll see progress for each region
+    Script will display summary at the end
+
+10. Download the JSON file:
+     Look for: sg_audit_data_YYYYMMDD_HHMMSS.json
+     Click "Actions"  "Download file"
+     Enter the filename shown
+     Save to your project folder
+
+
+
+STEP 2: GENERATE REPORT LOCALLY
+
+
+1. Open PowerShell in this directory:
+   C:\Users\KishoreKumarM\OneDrive - Nexsys One DMCC\Krishz - NexsysOne\Development\AWS Security
+
+2. Run the report generator:
+   python run_audit.py <downloaded_json_filename>
+
+   Example:
+   python run_audit.py sg_audit_data_20260112_143022.json
+
+3. Wait for report generation (1-5 minutes)
+    Analysis will process all regions
+    Charts will be generated
+    HTML and PDF reports will be created
+
+4. Open your reports:
+    Navigate to: output/ folder
+    Open: security_report_*.html (in browser)
+    Or:   security_report_*.pdf (for sharing)
+
+
+
+ WHAT YOU'LL GET
+
+
+Professional PDF/HTML report containing:
+
+ Executive Summary
+   Total security groups analyzed
+   Risk distribution (Critical/High/Medium/Low)
+   Visual charts and graphs
+
+ Critical Findings ( Immediate Action)
+   Databases exposed to internet
+   All ports open to 0.0.0.0/0
+   Specific remediation steps
+
+ High Risk Findings ( Urgent)
+   SSH/RDP exposed to internet
+   Management ports without restrictions
+   Actionable recommendations
+
+ Medium/Low Findings ()
+   Other security concerns
+   Best practice violations
+
+ Unused Resources (ℹ)
+   Security groups with no attachments
+   Optimization opportunities
+
+
+
+  TROUBLESHOOTING
+
+
+Issue: PDF generation fails on Windows
+Fix:   1. Install GTK+ runtime from:
+          https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer
+       2. Or use HTML report and browser "Print to PDF"
+
+Issue: AWS CloudShell script fails
+Fix:   1. Check IAM permissions (need EC2 read-only)
+       2. Ensure region is enabled
+       3. Try running in different region
+
+Issue: Python module not found
+Fix:   Run: pip install -r requirements.txt
+
+
+
+ ADDITIONAL RESOURCES
+
+
+ QUICKSTART.md  - Quick reference guide
+ README.md      - Complete user documentation
+ PLAN.md        - Technical implementation details
+
+
+
+ You're all set! Start with STEP 1 above.
+
+

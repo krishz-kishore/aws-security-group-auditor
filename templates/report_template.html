@@ -1,0 +1,422 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Security Group Audit Report</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        /* Light Theme (Default) */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            background: #f5f5f5;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 40px; transition: background 0.3s ease; }
+        .header { border-bottom: 4px solid #0066cc; padding-bottom: 20px; margin-bottom: 30px; position: relative; }
+        .header h1 { color: #0066cc; font-size: 32px; margin-bottom: 10px; }
+        .header .meta { color: #666; font-size: 14px; }
+        .executive-summary { background: #f8f9fa; border-left: 4px solid #0066cc; padding: 20px; margin-bottom: 30px; transition: background 0.3s ease; }
+        .executive-summary h2 { color: #0066cc; margin-bottom: 15px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0; }
+        .stat-card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 20px; text-align: center; transition: background 0.3s ease, border-color 0.3s ease; }
+        .stat-card .number { font-size: 36px; font-weight: bold; color: #0066cc; }
+        .stat-card .label { color: #666; font-size: 14px; margin-top: 5px; }
+        .severity-critical { background: #dc3545; color: white; }
+        .severity-high { background: #fd7e14; color: white; }
+        .severity-medium { background: #ffc107; color: #333; }
+        .severity-low { background: #17a2b8; color: white; }
+        .severity-info { background: #6c757d; color: white; }
+        .severity-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        .section { margin: 30px 0; page-break-inside: avoid; }
+        .section h2 { color: #0066cc; border-bottom: 2px solid #0066cc; padding-bottom: 10px; margin-bottom: 20px; font-size: 24px; }
+        .section h3 { color: #333; margin: 20px 0 10px 0; font-size: 18px; }
+        .finding { background: #fff; border: 1px solid #ddd; border-left: 4px solid #dc3545; border-radius: 4px; padding: 15px; margin-bottom: 15px; page-break-inside: avoid; transition: background 0.3s ease, border-color 0.3s ease; }
+        .finding.high { border-left-color: #fd7e14; }
+        .finding.medium { border-left-color: #ffc107; }
+        .finding.low { border-left-color: #17a2b8; }
+        .finding.info { border-left-color: #6c757d; }
+        .finding-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .finding-title { font-weight: bold; font-size: 16px; color: #333; }
+        .finding-details { background: #f8f9fa; padding: 10px; border-radius: 4px; margin: 10px 0; font-size: 14px; transition: background 0.3s ease; }
+        .finding-details .detail-row { margin: 5px 0; }
+        .finding-details .label { font-weight: bold; color: #666; display: inline-block; width: 150px; }
+        .finding-details .value { color: #333; font-family: 'Courier New', monospace; }
+        .recommendation { background: #e7f3ff; border-left: 3px solid #0066cc; padding: 10px; margin-top: 10px; font-size: 14px; transition: background 0.3s ease; }
+        .recommendation strong { color: #0066cc; }
+        .chart-container { text-align: center; margin: 20px 0; page-break-inside: avoid; }
+        .chart-container img { max-width: 100%; height: auto; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
+        table th { background: #0066cc; color: white; padding: 12px; text-align: left; transition: background 0.3s ease; }
+        table td { padding: 10px; border-bottom: 1px solid #ddd; transition: border-color 0.3s ease; }
+        table tr:hover { background: #f8f9fa; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 2px solid #ddd; text-align: center; color: #666; font-size: 12px; }
+        .page-break { page-break-after: always; }
+        
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .theme-toggle:hover { background: #0052a3; }
+        
+        /* Dark Theme */
+        body.dark-theme { background: #0d1117; color: #c9d1d9; }
+        body.dark-theme .container { background: #161b22; }
+        body.dark-theme .header { border-bottom-color: #1f6feb; }
+        body.dark-theme .header h1 { color: #58a6ff; }
+        body.dark-theme .header .meta { color: #8b949e; }
+        body.dark-theme .executive-summary { background: #0d1117; border-left-color: #1f6feb; }
+        body.dark-theme .executive-summary h2 { color: #58a6ff; }
+        body.dark-theme .stat-card { background: #0d1117; border-color: #30363d; }
+        body.dark-theme .stat-card .number { color: #58a6ff; }
+        body.dark-theme .stat-card .label { color: #8b949e; }
+        body.dark-theme .section h2 { color: #58a6ff; border-bottom-color: #1f6feb; }
+        body.dark-theme .section h3 { color: #c9d1d9; }
+        body.dark-theme .finding { background: #0d1117; border-color: #30363d; }
+        body.dark-theme .finding-title { color: #c9d1d9; }
+        body.dark-theme .finding-details { background: #161b22; }
+        body.dark-theme .finding-details .label { color: #8b949e; }
+        body.dark-theme .finding-details .value { color: #c9d1d9; }
+        body.dark-theme .recommendation { background: #0d1926; border-left-color: #1f6feb; }
+        body.dark-theme .recommendation strong { color: #58a6ff; }
+        body.dark-theme table th { background: #1f6feb; }
+        body.dark-theme table td { border-bottom-color: #30363d; color: #c9d1d9; }
+        body.dark-theme table tr:hover { background: #0d1117; }
+        body.dark-theme .footer { border-top-color: #30363d; color: #8b949e; }
+        body.dark-theme .theme-toggle { background: #1f6feb; }
+        body.dark-theme .theme-toggle:hover { background: #58a6ff; }
+        
+        /* Dark theme severity boxes */
+        body.dark-theme .severity-medium { background: #ffc107; color: #000; }
+        body.dark-theme div[style*="background: #f8d7da"] { background: #2d1215 !important; border-left-color: #dc3545 !important; color: #f8d7da; }
+        body.dark-theme div[style*="background: #ffe8d1"] { background: #2d1e15 !important; border-left-color: #fd7e14 !important; color: #ffe8d1; }
+        body.dark-theme div[style*="background: #fff3cd"] { background: #2d2815 !important; border-left-color: #ffc107 !important; color: #fff3cd; }
+        body.dark-theme div[style*="background: #d1ecf1"] { background: #152226 !important; border-left-color: #17a2b8 !important; color: #d1ecf1; }
+        body.dark-theme div[style*="background: #d1d3d4"] { background: #1a1b1c !important; border-left-color: #6c757d !important; color: #d1d3d4; }
+        
+        @media print { 
+            body { background: white; } 
+            .container { padding: 0; } 
+            .theme-toggle { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span id="theme-icon">🌙</span>
+                <span id="theme-text">Dark Mode</span>
+            </button>
+            <h1>AWS Security Group Audit Report</h1>
+            <div class="meta">
+                <p><strong>AWS Account:</strong> {{ account_id }} {% if account_alias != 'N/A' %}({{ account_alias }}){% endif %}</p>
+                <p><strong>Scan Date:</strong> {{ scan_date }}</p>
+                <p><strong>Report Generated:</strong> {{ generated_date }}</p>
+                <p><strong>Regions Analyzed:</strong> {{ total_regions }}</p>
+            </div>
+        </div>
+        <div class="executive-summary">
+            <h2>Executive Summary</h2>
+            <p>This report provides a comprehensive security analysis of AWS Security Groups across all enabled regions.</p>
+            <div class="stats-grid">
+                <div class="stat-card severity-critical"><div class="number">{{ severity_counts.critical }}</div><div class="label">Critical Findings</div></div>
+                <div class="stat-card severity-high"><div class="number">{{ severity_counts.high }}</div><div class="label">High Risk Findings</div></div>
+                <div class="stat-card severity-medium"><div class="number">{{ severity_counts.medium }}</div><div class="label">Medium Risk Findings</div></div>
+                <div class="stat-card"><div class="number">{{ stats.total_sgs }}</div><div class="label">Total Security Groups</div></div>
+                <div class="stat-card"><div class="number">{{ stats.unused_sgs }}</div><div class="label">Unused Security Groups</div></div>
+            </div>
+        </div>
+        <div class="section">
+            <h2>Overview</h2>
+            <div class="chart-container"><img src="{{ charts.severity }}" alt="Severity Distribution"></div>
+            <div class="chart-container"><img src="{{ charts.stats }}" alt="Statistics"></div>
+        </div>
+        
+        <div class="page-break"></div>
+        
+        <!-- Risk Evaluation Methodology -->
+        <div class="section">
+            <h2>📋 Risk Evaluation Methodology</h2>
+            <p>This audit uses industry-standard security best practices to evaluate AWS Security Groups. Each finding is classified based on the potential impact and exploitability of the security misconfiguration.</p>
+            
+            <h3 style="color: #dc3545; margin-top: 20px;">🔴 CRITICAL Severity</h3>
+            <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; margin: 10px 0;">
+                <p><strong>Definition:</strong> Security configurations that pose immediate, severe risk of data breach or system compromise.</p>
+                <p><strong>Criteria:</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li><strong>Database Ports Exposed to Internet (0.0.0.0/0):</strong> Ports 3306 (MySQL), 5432 (PostgreSQL), 1433 (SQL Server), 27017 (MongoDB), 6379 (Redis), 9200 (Elasticsearch)</li>
+                    <li><strong>All Protocols/Ports Open:</strong> Security group allows ALL traffic from the internet</li>
+                    <li><strong>Telnet (Port 23):</strong> Insecure, unencrypted protocol exposed to internet</li>
+                </ul>
+                <p><strong>Why Critical:</strong> These configurations allow direct access to sensitive data stores or complete system access from the internet. Attackers actively scan for and exploit these exposures. Data breaches, ransomware, and complete system compromise are likely outcomes.</p>
+                <p><strong>Required Action:</strong> Immediate remediation required - typically within 24 hours.</p>
+            </div>
+            
+            <h3 style="color: #fd7e14; margin-top: 20px;">🟠 HIGH Severity</h3>
+            <div style="background: #ffe8d1; border-left: 4px solid #fd7e14; padding: 15px; margin: 10px 0;">
+                <p><strong>Definition:</strong> Security configurations that allow unauthorized administrative access or expose sensitive services.</p>
+                <p><strong>Criteria:</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li><strong>SSH (Port 22) Exposed to Internet:</strong> Remote shell access available from anywhere</li>
+                    <li><strong>RDP (Port 3389) Exposed to Internet:</strong> Windows Remote Desktop accessible from internet</li>
+                    <li><strong>Management Ports:</strong> VNC (5900), WinRM (5985/5986) exposed to 0.0.0.0/0</li>
+                    <li><strong>Other Risky Service Ports:</strong> FTP (20/21), SMTP (25), SMB (445), HTTP (80), HTTPS (443) without proper controls</li>
+                </ul>
+                <p><strong>Why High:</strong> These ports provide administrative or service-level access. While not immediately critical like databases, they are commonly targeted in attacks. Brute force attacks, credential stuffing, and exploitation of known vulnerabilities are common attack vectors.</p>
+                <p><strong>Required Action:</strong> Remediation recommended within 7 days. Implement VPN, bastion hosts, or AWS Systems Manager Session Manager.</p>
+            </div>
+            
+            <h3 style="color: #ffc107; margin-top: 20px;">🟡 MEDIUM Severity</h3>
+            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 10px 0;">
+                <p><strong>Definition:</strong> Security configurations that increase attack surface but require additional conditions for exploitation.</p>
+                <p><strong>Criteria:</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li><strong>Web Services Without WAF:</strong> HTTP/HTTPS exposed without CloudFront or ALB protection</li>
+                    <li><strong>Non-Critical Service Ports:</strong> Other application ports exposed to internet</li>
+                    <li><strong>Overly Broad CIDR Ranges:</strong> /8 or /16 ranges when more specific ranges are appropriate</li>
+                </ul>
+                <p><strong>Why Medium:</strong> While these configurations expose services, the risk is mitigated by application-level security controls or the nature of the service. However, they still increase attack surface and may facilitate reconnaissance or denial of service attacks.</p>
+                <p><strong>Required Action:</strong> Review and remediate within 30 days. Implement defense-in-depth controls.</p>
+            </div>
+            
+            <h3 style="color: #17a2b8; margin-top: 20px;">🔵 LOW Severity</h3>
+            <div style="background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 15px; margin: 10px 0;">
+                <p><strong>Definition:</strong> Security configurations that represent best practice violations but pose minimal immediate risk.</p>
+                <p><strong>Criteria:</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li><strong>Permissive Egress Rules:</strong> All outbound traffic allowed (common and often necessary)</li>
+                    <li><strong>Documentation Issues:</strong> Missing descriptions on rules</li>
+                </ul>
+                <p><strong>Why Low:</strong> These are generally acceptable configurations but may complicate incident response or data exfiltration detection.</p>
+                <p><strong>Required Action:</strong> Review as part of regular security maintenance.</p>
+            </div>
+            
+            <h3 style="color: #6c757d; margin-top: 20px;">ℹ️ INFORMATIONAL</h3>
+            <div style="background: #e2e3e5; border-left: 4px solid #6c757d; padding: 15px; margin: 10px 0;">
+                <p><strong>Definition:</strong> Opportunities for optimization and improved security posture.</p>
+                <p><strong>Criteria:</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li><strong>Unused Security Groups:</strong> No attached resources (EC2, RDS, ELB, etc.)</li>
+                </ul>
+                <p><strong>Why Informational:</strong> Unused security groups don't pose security risks but create management overhead and potential confusion. Removing them reduces complexity and the chance of misconfiguration.</p>
+                <p><strong>Required Action:</strong> Clean up as part of regular maintenance to reduce clutter.</p>
+            </div>
+            
+            <div style="background: #e7f3ff; border-left: 4px solid #0066cc; padding: 15px; margin-top: 20px;">
+                <p><strong>📊 Risk Scoring Methodology:</strong></p>
+                <p>Each security group rule is automatically evaluated against this framework. Severity is determined by:</p>
+                <ol style="margin-left: 20px;">
+                    <li><strong>Port Classification:</strong> Is it a critical database port, management port, or standard service port?</li>
+                    <li><strong>Source IP Range:</strong> Is it exposed to the entire internet (0.0.0.0/0 or ::/0)?</li>
+                    <li><strong>Protocol Type:</strong> Is it ALL protocols or specific protocol?</li>
+                    <li><strong>Resource Attachment:</strong> Are there active resources using this security group?</li>
+                </ol>
+                <p><strong>Industry Standards Referenced:</strong> CIS AWS Foundations Benchmark, NIST Cybersecurity Framework, AWS Security Best Practices, OWASP Cloud Security Guidelines</p>
+            </div>
+        </div>
+        
+        <div class="page-break"></div>
+        
+        <!-- Used Security Groups Table -->
+        <div class="section">
+            <h2>📊 Active Security Groups - Complete Inventory</h2>
+            <p>The following table lists all security groups currently in use (with attached resources), showing their ingress rules and IP configurations.</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Security Group</th>
+                        <th style="width: 10%;">Region</th>
+                        <th style="width: 12%;">VPC</th>
+                        <th style="width: 10%;">Resources</th>
+                        <th style="width: 10%;">Port(s)</th>
+                        <th style="width: 8%;">Protocol</th>
+                        <th style="width: 35%;">Source IP/CIDR</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sg in used_security_groups %}
+                        {% if sg.ingress_rules %}
+                            {% for rule in sg.ingress_rules %}
+                                <tr>
+                                    {% if loop.first %}
+                                        <td rowspan="{{ sg.ingress_rules|length }}" style="font-weight: bold; vertical-align: top;">
+                                            {{ sg.sg_name }}<br>
+                                            <span style="font-size: 11px; color: #666; font-weight: normal;">{{ sg.sg_id }}</span>
+                                        </td>
+                                        <td rowspan="{{ sg.ingress_rules|length }}" style="vertical-align: top;">{{ sg.region }}</td>
+                                        <td rowspan="{{ sg.ingress_rules|length }}" style="vertical-align: top; font-size: 11px;">{{ sg.vpc_id }}</td>
+                                        <td rowspan="{{ sg.ingress_rules|length }}" style="vertical-align: top; text-align: center;">{{ sg.attached_resources_count }}</td>
+                                    {% endif %}
+                                    <td>{{ rule.port }}</td>
+                                    <td>{{ rule.protocol }}</td>
+                                    <td style="font-family: 'Courier New', monospace; font-size: 11px; word-break: break-all;">
+                                        {{ rule.source }}
+                                        {% if '0.0.0.0/0' in rule.source or '::/0' in rule.source %}
+                                            <span style="color: #dc3545; font-weight: bold;"> ⚠️ INTERNET</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td style="font-weight: bold;">{{ sg.sg_name }}<br><span style="font-size: 11px; color: #666; font-weight: normal;">{{ sg.sg_id }}</span></td>
+                                <td>{{ sg.region }}</td>
+                                <td style="font-size: 11px;">{{ sg.vpc_id }}</td>
+                                <td style="text-align: center;">{{ sg.attached_resources_count }}</td>
+                                <td colspan="3" style="color: #6c757d; font-style: italic;">No ingress rules defined</td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <div style="background: #f8f9fa; padding: 15px; margin-top: 20px; border-radius: 4px;">
+                <p><strong>Table Notes:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Resources:</strong> Number of network interfaces (EC2 instances, RDS databases, load balancers, etc.) attached to this security group</li>
+                    <li><strong>⚠️ INTERNET:</strong> Indicates rule allows traffic from entire internet (0.0.0.0/0 or ::/0) - potential security risk</li>
+                    <li><strong>All Ports:</strong> Indicates all ports are open for the specified protocol</li>
+                    <li><strong>All Protocol:</strong> Indicates all protocols (TCP, UDP, ICMP, etc.) are allowed</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="page-break"></div>
+        {% if findings.critical %}
+        <div class="section">
+            <h2> Critical Findings</h2>
+            <p><strong>Immediate action required.</strong> These findings represent severe security risks.</p>
+            {% for finding in findings.critical %}
+            <div class="finding critical">
+                <div class="finding-header">
+                    <div class="finding-title">{{ finding.type }}</div>
+                    <span class="severity-badge severity-critical">{{ finding.severity }}</span>
+                </div>
+                <div class="finding-details">
+                    <div class="detail-row"><span class="label">Security Group:</span><span class="value">{{ finding.sg_name }} ({{ finding.sg_id }})</span></div>
+                    <div class="detail-row"><span class="label">Region:</span><span class="value">{{ finding.region }}</span></div>
+                    <div class="detail-row"><span class="label">VPC:</span><span class="value">{{ finding.vpc_id }}</span></div>
+                    <div class="detail-row"><span class="label">Rule:</span><span class="value">{{ finding.rule }}</span></div>
+                    <div class="detail-row"><span class="label">Attached Resources:</span><span class="value">{{ finding.attached_resources }}</span></div>
+                    {% if finding.description %}<div class="detail-row"><span class="label">Description:</span><span class="value">{{ finding.description }}</span></div>{% endif %}
+                </div>
+                <div class="recommendation"><strong>Recommendation:</strong> {{ finding.recommendation }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="page-break"></div>
+        {% endif %}
+        {% if findings.high %}
+        <div class="section">
+            <h2> High Risk Findings</h2>
+            <p><strong>Action needed soon.</strong> Significant security concerns.</p>
+            {% for finding in findings.high %}
+            <div class="finding high">
+                <div class="finding-header">
+                    <div class="finding-title">{{ finding.type }}</div>
+                    <span class="severity-badge severity-high">{{ finding.severity }}</span>
+                </div>
+                <div class="finding-details">
+                    <div class="detail-row"><span class="label">Security Group:</span><span class="value">{{ finding.sg_name }} ({{ finding.sg_id }})</span></div>
+                    <div class="detail-row"><span class="label">Region:</span><span class="value">{{ finding.region }}</span></div>
+                    <div class="detail-row"><span class="label">VPC:</span><span class="value">{{ finding.vpc_id }}</span></div>
+                    <div class="detail-row"><span class="label">Rule:</span><span class="value">{{ finding.rule }}</span></div>
+                    <div class="detail-row"><span class="label">Attached Resources:</span><span class="value">{{ finding.attached_resources }}</span></div>
+                </div>
+                <div class="recommendation"><strong>Recommendation:</strong> {{ finding.recommendation }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="page-break"></div>
+        {% endif %}
+        {% if findings.medium %}
+        <div class="section">
+            <h2> Medium Risk Findings</h2>
+            <p>Review and address as part of regular security maintenance.</p>
+            {% for finding in findings.medium %}
+            <div class="finding medium">
+                <div class="finding-header">
+                    <div class="finding-title">{{ finding.type }}</div>
+                    <span class="severity-badge severity-medium">{{ finding.severity }}</span>
+                </div>
+                <div class="finding-details">
+                    <div class="detail-row"><span class="label">Security Group:</span><span class="value">{{ finding.sg_name }} ({{ finding.sg_id }})</span></div>
+                    <div class="detail-row"><span class="label">Region:</span><span class="value">{{ finding.region }}</span></div>
+                    <div class="detail-row"><span class="label">Rule:</span><span class="value">{{ finding.rule }}</span></div>
+                </div>
+                <div class="recommendation"><strong>Recommendation:</strong> {{ finding.recommendation }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if findings.info %}
+        <div class="section">
+            <h2>ℹ Unused Security Groups</h2>
+            <p>The following security groups have no attached resources.</p>
+            <table>
+                <thead><tr><th>Security Group</th><th>ID</th><th>Region</th><th>VPC</th></tr></thead>
+                <tbody>
+                    {% for finding in findings.info %}
+                    <tr><td>{{ finding.sg_name }}</td><td>{{ finding.sg_id }}</td><td>{{ finding.region }}</td><td>{{ finding.vpc_id }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+        <div class="footer">
+            <p>This report was automatically generated by the AWS Security Group Auditor</p>
+            <p> {{ generated_date.split(',')[1].strip().split()[0] }} | Confidential - For Internal Use Only</p>
+        </div>
+    </div>
+    
+    <script>
+        // Theme toggle functionality
+        function toggleTheme() {
+            const body = document.body;
+            const themeIcon = document.getElementById('theme-icon');
+            const themeText = document.getElementById('theme-text');
+            
+            body.classList.toggle('dark-theme');
+            
+            if (body.classList.contains('dark-theme')) {
+                themeIcon.textContent = '☀️';
+                themeText.textContent = 'Light Mode';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                themeIcon.textContent = '🌙';
+                themeText.textContent = 'Dark Mode';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+        
+        // Load saved theme preference
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-theme');
+                document.getElementById('theme-icon').textContent = '☀️';
+                document.getElementById('theme-text').textContent = 'Light Mode';
+            }
+        });
+    </script>
+</body>
+</html>
