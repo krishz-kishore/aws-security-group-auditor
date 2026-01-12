@@ -3,6 +3,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![AWS](https://img.shields.io/badge/AWS-CloudShell-orange.svg)](https://aws.amazon.com/cloudshell/)
+[![Code Quality](https://img.shields.io/badge/code%20quality-A-brightgreen.svg)](https://github.com/krishz-kishore/aws-security-group-auditor)
+[![Maintainability](https://img.shields.io/badge/maintainability-A-brightgreen.svg)](https://github.com/krishz-kishore/aws-security-group-auditor)
+[![CodeFactor](https://www.codefactor.io/repository/github/krishz-kishore/aws-security-group-auditor/badge)](https://www.codefactor.io/repository/github/krishz-kishore/aws-security-group-auditor)
 
 Professional security analysis and reporting tool for AWS Security Groups. Identifies risky configurations, unused resources, and generates executive-ready reports with interactive dark theme support.
 
