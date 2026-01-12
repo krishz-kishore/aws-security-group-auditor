@@ -1,14 +1,15 @@
-﻿# AWS Security Group Auditor
+# AWS Security Group Auditor
 
-Professional security analysis and reporting tool for AWS Security Groups. Identifies risky configurations, unused resources, and generates executive-ready PDF reports.
+Professional security analysis and reporting tool for AWS Security Groups. Identifies risky configurations, unused resources, and generates executive-ready reports with dark theme support.
 
 ## Features
 
--  **Multi-Region Scanning** - Analyzes all enabled AWS regions
--  **Industry-Standard Risk Detection** - Identifies risky ports and configurations
+- 🌍 **Multi-Region Scanning** - Analyzes all enabled AWS regions
+- 🔒 **Industry-Standard Risk Detection** - Identifies risky ports and configurations
 - ✅ **Unused Resource Detection** - Finds security groups with no attachments
-- ✅ **Professional PDF Reports** - Corporate-styled reports ready for stakeholders
-- ✅ **No Credential Storage** - Data collection runs in AWS CloudShell
+- 📊 **Professional Reports** - Corporate-styled HTML reports with interactive dark theme
+- 🔐 **No Credential Storage** - Data collection runs in AWS CloudShell
+- 🌙 **Dark Theme Support** - Toggle between light and dark modes with persistent preference
 
 ## Quick Start
 
